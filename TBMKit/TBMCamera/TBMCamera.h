@@ -37,7 +37,7 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
         initialVideoOrientation = (AVCaptureVideoOrientation)statusBarOrientation;
     }
 
-    AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.previewView.layer;
+    AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)caller.previewView.layer;
         previewLayer.connection.videoOrientation = initialVideoOrientation;
     } );
  }
@@ -55,7 +55,7 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
  @method tbmCameraCaptureSessionWasInitialized:
  @example
  // Set up the preview view
- caller.previewView.session = self.session;
+ caller.previewView.session = camera.session;
  */
 - (void)tbmCameraCaptureSessionWasInitialized:(TBMCamera *)camera;
 /*!
@@ -97,12 +97,12 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
     if ( connection.isVideoStabilizationSupported ) {
         connection.preferredVideoStabilizationMode = AVCaptureVideoStabilizationModeAuto;
     }
-    [self.session commitConfiguration];
+    [caller.session commitConfiguration];
  
     caller.movieFileOutput = movieFileOutput;
  
     dispatch_async( dispatch_get_main_queue(), ^{
-    // 可进行必要的 UI 设置。比如，录制按钮可用。
+        // 可进行必要的 UI 设置。比如，录制按钮可用。
     } );
  }
  */
@@ -207,8 +207,8 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
  
  >= iOS 10.0
  NSArray<NSString *> *deviceTypes = @[AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeBuiltInDuoCamera, AVCaptureDeviceTypeBuiltInTelephotoCamera];
- self.videoDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:deviceTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
- NSArray *videoDevices = self.videoDeviceDiscoverySession.devices;
+ caller.videoDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:deviceTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+ NSArray *videoDevices = caller.videoDeviceDiscoverySession.devices;
  */
 - (void)changeCameraWithDevice:(AVCaptureDevice *)newVideoDevice;
 - (void)changeFocusMode:(AVCaptureFocusMode)focusMode;
