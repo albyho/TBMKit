@@ -42,7 +42,7 @@
 #pragma mark TBMCameraDelegate
 - (void)tbmCameraSetup:(TBMCamera *)camera setupResult:(TBMCameraSetupResult)setupResult {
     // Main Thread
-    NSLog(@"%s %ld", __FUNCTION__, setupResult);
+    NSLog(@"%s %ld", __FUNCTION__, (long)setupResult);
 }
 - (BOOL)tbmCameraConfigureCaptureOutput:(TBMCamera *)camera {
     NSLog(@"%s", __FUNCTION__);

@@ -21,8 +21,28 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
 
 @protocol TBMCameraDelegate <NSObject>
 
+@required
 // Setup
-- (void)tbmCameraSetup:(TBMCamera *)camera setupResult:(TBMCameraSetupResult)setupResult;
+/*!
+ @method tbmCameraDidSetup:setupResult:
+ @discussion
+ Use the status bar orientation as the initial video orientation. Subsequent orientation changes are
+ handled by -[TBMCameraViewController viewWillTransitionToSize:withTransitionCoordinator:].
+
+ @example
+ if(setupResult == TBMCameraSetupResultSuccess) {
+    UIInterfaceOrientation statusBarOrientation = [UIApplication sharedApplication].statusBarOrientation;
+    AVCaptureVideoOrientation initialVideoOrientation = AVCaptureVideoOrientationPortrait;
+    if ( statusBarOrientation != UIInterfaceOrientationUnknown ) {
+        initialVideoOrientation = (AVCaptureVideoOrientation)statusBarOrientation;
+    }
+
+    AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.previewView.layer;
+        previewLayer.connection.videoOrientation = initialVideoOrientation;
+    } );
+ }
+ */
+- (void)tbmCameraDidSetup:(TBMCamera *)camera setupResult:(TBMCameraSetupResult)setupResult;
 
 /*!
  @method tbmCameraCaptureSessionPreset:
@@ -32,26 +52,66 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
 - (NSString *)tbmCameraCaptureSessionPreset:(TBMCamera *)camera;            // 非主线程
 
 /*!
- @method tbmCameraCaptureDevice:
+ @method tbmCameraCaptureSessionWasInitialized:
+ @example
+ // Set up the preview view
+ caller.previewView.session = self.session;
+ */
+- (void)tbmCameraCaptureSessionWasInitialized:(TBMCamera *)camera;
+/*!
+ @method tbmCameraInitialVideoDevice:
  @example
  < iOS 10.0
  NSArray *videoDevices  = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
  for (AVCaptureDevice *videoDevice in devices) {
- if ([videoDevice position] == AVCaptureDevicePositionBack) {
-    return videoDevice;
+    if ([videoDevice position] == AVCaptureDevicePositionBack) {
+        return videoDevice;
+    }
  }
  或：
  return [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
  
  >= iOS 10.0
  AVCaptureDevice *videoDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera
-                                                                   mediaType:AVMediaTypeVideo
-                                                                    position:AVCaptureDevicePositionUnspecified];
+ mediaType:AVMediaTypeVideo
+ position:AVCaptureDevicePositionUnspecified];
  return videoDevice;
  */
 - (AVCaptureDevice *)tbmCameraInitialVideoDevice:(TBMCamera *)camera;       // 非主线程
+/*!
+ @method tbmCameraWillConfigureCaptureOutput:
+ @example
+ 可进行必要的 UI 设置
+ */
 - (void)tbmCameraWillConfigureCaptureOutput:(TBMCamera *)camera;
+/*!
+ @method tbmCameraInitialVideoDevice:
+ @example
+ AVCaptureMovieFileOutput *movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
+ 
+ if ( [camera.session canAddOutput:movieFileOutput] ) {
+    [camera.session beginConfiguration];
+    [camera.session addOutput:movieFileOutput];
+    camera.session.sessionPreset = AVCaptureSessionPresetHigh;
+    AVCaptureConnection *connection = [movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
+    if ( connection.isVideoStabilizationSupported ) {
+        connection.preferredVideoStabilizationMode = AVCaptureVideoStabilizationModeAuto;
+    }
+    [self.session commitConfiguration];
+ 
+    caller.movieFileOutput = movieFileOutput;
+ 
+    dispatch_async( dispatch_get_main_queue(), ^{
+    // 可进行必要的 UI 设置。比如，录制按钮可用。
+    } );
+ }
+ */
 - (BOOL)tbmCameraConfigureCaptureOutput:(TBMCamera *)camera;                // 非主线程
+/*!
+ @method tbmCameraDidConfigureCaptureOutput:
+ @example
+ 可进行必要的 UI 设置
+ */
 - (void)tbmCameraDidConfigureCaptureOutput:(TBMCamera *)camera;
 
 // Device Configuration
@@ -62,15 +122,15 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
  */
 - (void)tbmCameraDeviceWillChange:(TBMCamera *)camera;
 /*!
- @method tbmCameraDeviceChangingConfigure:
+ @method tbmCameraDeviceChanging:
  @example
  >= iOS 8.0
- AVCaptureConnection *connection = [self.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
+ AVCaptureConnection *connection = [caller.movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
  if ( connection.isVideoStabilizationSupported ) {
- connection.preferredVideoStabilizationMode = AVCaptureVideoStabilizationModeAuto;
+    connection.preferredVideoStabilizationMode = AVCaptureVideoStabilizationModeAuto;
  }
  */
-- (void)tbmCameraDeviceChangingConfigure:(TBMCamera *)camera;    // 非主线程
+- (void)tbmCameraDeviceChanging:(TBMCamera *)camera;    // 非主线程
 /*!
  @method tbmCameraDeviceWillChange:
  @example
@@ -78,6 +138,7 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
  */
 - (void)tbmCameraDeviceDidChange:(TBMCamera *)camera;
 
+@optional
 // Focus
 - (void)tbmCameraFocusModeDidChange:(TBMCamera *)camera newValue:(AVCaptureFocusMode)newValue oldValue:(id/*可能没有值，为NSNull*/)oldValue;
 - (void)tbmCameraLensPositionDidChange:(TBMCamera *)camera newValue:(AVCaptureFocusMode)newValue;
@@ -97,8 +158,23 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
 - (void)tbmCameraSessionRunningStateDidChange:(TBMCamera *)camera newValue:(BOOL)newValue;
 
 // Interruption
+/*!
+ @method tbmCameraSessionRuntimeError:
+ @example
+ 可进行必要的 UI 设置
+ */
 - (void)tbmCameraSessionRuntimeError:(TBMCamera *)camera notification:(NSNotification *)notification;
+/*!
+ @method tbmCameraSessionWasInterrupted:
+ @example
+ 可进行必要的 UI 设置
+ */
 - (void)tbmCameraSessionWasInterrupted:(TBMCamera *)camera notification:(NSNotification *)notification;
+/*!
+ @method tbmCameraSessionInterruptionEnded:
+ @example
+ 可进行必要的 UI 设置
+ */
 - (void)tbmCameraSessionInterruptionEnded:(TBMCamera *)camera notification:(NSNotification *)notification;
 
 @end

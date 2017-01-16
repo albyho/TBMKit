@@ -68,8 +68,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     // Create the AVCaptureSession
     self.session = [[AVCaptureSession alloc] init];
 
-    // Set up the preview view
-    self.previewView.session = self.session;
+    [self tbmCameraCaptureSessionWasInitializedNotify:self];
     
     self.setupResult = TBMCameraSetupResultSuccess;
     
@@ -127,6 +126,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
         NSLog( @"Could not create video device" );
         self.setupResult = TBMCameraSetupResultSessionConfigurationFailed;
         [self.session commitConfiguration];
+        [self tbmCameraDidSetupNotify:self setupResult:self.setupResult];
         return;
     }
     AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
@@ -134,38 +134,19 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
         NSLog( @"Could not create video device input: %@", error );
         self.setupResult = TBMCameraSetupResultSessionConfigurationFailed;
         [self.session commitConfiguration];
+        [self tbmCameraDidSetupNotify:self setupResult:self.setupResult];
         return;
     }
     if ( [self.session canAddInput:videoDeviceInput] ) {
         [self.session addInput:videoDeviceInput];
         self.videoDeviceInput = videoDeviceInput;
-        self.videoDevice = videoDevice;
-        
-        dispatch_async( dispatch_get_main_queue(), ^{
-            /*
-             Why are we dispatching this to the main queue?
-             Because AVCaptureVideoPreviewLayer is the backing layer for AVCamManualPreviewView and UIView
-             can only be manipulated on the main thread.
-             Note: As an exception to the above rule, it is not necessary to serialize video orientation changes
-             on the AVCaptureVideoPreviewLayer’s connection with other session manipulation.
-             
-             Use the status bar orientation as the initial video orientation. Subsequent orientation changes are
-             handled by -[AVCamManualCameraViewController viewWillTransitionToSize:withTransitionCoordinator:].
-             */
-            UIInterfaceOrientation statusBarOrientation = [UIApplication sharedApplication].statusBarOrientation;
-            AVCaptureVideoOrientation initialVideoOrientation = AVCaptureVideoOrientationPortrait;
-            if ( statusBarOrientation != UIInterfaceOrientationUnknown ) {
-                initialVideoOrientation = (AVCaptureVideoOrientation)statusBarOrientation;
-            }
-            
-            AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.previewView.layer;
-            previewLayer.connection.videoOrientation = initialVideoOrientation;
-        } );
+        self.videoDevice = videoDevice;        
     }
     else {
         NSLog( @"Could not add video device input to the session" );
         self.setupResult = TBMCameraSetupResultSessionConfigurationFailed;
         [self.session commitConfiguration];
+        [self tbmCameraDidSetupNotify:self setupResult:self.setupResult];
         return;
     }
     
@@ -182,26 +163,26 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
         NSLog( @"Could not add audio device input to the session" );
     }
     
+    [self tbmCameraWillConfigureCaptureOutputNotify:self];
     if ( ![self tbmCameraConfigureCaptureOutputNotify:self] ) {
         self.setupResult = TBMCameraSetupResultSessionConfigurationFailed;
+        [self tbmCameraDidSetupNotify:self setupResult:self.setupResult];
         [self.session commitConfiguration];
         return;
     }
+    [self tbmCameraDidConfigureCaptureOutputNotify:self];
     
     [self.session commitConfiguration];
-    
-    dispatch_async( dispatch_get_main_queue(), ^{
-        //[self configureManualHUD];
-    } );
+    [self tbmCameraDidSetupNotify:self setupResult:self.setupResult];
 }
 
 #pragma mark TBMCameraDelegate
 
 // Setup
-- (void)tbmCameraSetupNotify:(TBMCamera *)camera setupResult:(TBMCameraSetupResult)setupResult {
-    if ( [self.delegate respondsToSelector:@selector(tbmCameraSetup:setupResult:)] ) {
+- (void)tbmCameraDidSetupNotify:(TBMCamera *)camera setupResult:(TBMCameraSetupResult)setupResult {
+    if ( [self.delegate respondsToSelector:@selector(tbmCameraDidSetup:setupResult:)] ) {
         runAsynchronouslyOnMainQueue(^{
-            [self.delegate tbmCameraSetup:camera setupResult:setupResult];
+            [self.delegate tbmCameraDidSetup:camera setupResult:setupResult];
         });
     }
 }
@@ -212,6 +193,13 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
         return [self.delegate tbmCameraCaptureSessionPreset:camera];
     }
     return AVCaptureSessionPresetHigh;
+}
+- (void)tbmCameraCaptureSessionWasInitializedNotify:(TBMCamera *)camera {
+    if ( [self.delegate respondsToSelector:@selector(tbmCameraCaptureSessionWasInitialized:)] ) {
+        runAsynchronouslyOnMainQueue(^{
+            [self.delegate tbmCameraCaptureSessionWasInitialized:camera];
+        });
+    }
 }
 - (AVCaptureDevice *)tbmCameraInitialVideoDeviceNotify:(TBMCamera *)camera {
     // 非主线程
@@ -246,10 +234,10 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
         });
     }
 }
-- (void)tbmCameraDeviceChangingConfigureNotify:(TBMCamera *)camera {
+- (void)tbmCameraDeviceChangingNotify:(TBMCamera *)camera {
     // 非主线程
-    if ( [self.delegate respondsToSelector:@selector(tbmCameraDeviceChangingConfigure:)] ) {
-        return [self.delegate tbmCameraDeviceChangingConfigure:camera];
+    if ( [self.delegate respondsToSelector:@selector(tbmCameraDeviceChanging:)] ) {
+        return [self.delegate tbmCameraDeviceChanging:camera];
     }
 }
 - (void)tbmCameraDeviceDidChangeNotify:(TBMCamera *)camera {
@@ -573,7 +561,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
             [self.session addInput:self.videoDeviceInput];
         }
         
-        [self tbmCameraDeviceChangingConfigureNotify:self];
+        [self tbmCameraDeviceChangingNotify:self];
         
         [self.session commitConfiguration];
         
@@ -802,7 +790,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
             [AVCaptureDevice requestAccessForMediaType:mediaType completionHandler:^( BOOL granted ) {
                 if ( ! granted ) {
                     self.setupResult = isCheckMicrophoneAuthorizationStatus ? TBMCameraSetupResultMicrophoneNotAuthorized : TBMCameraSetupResultCameraNotAuthorized;
-                    [self tbmCameraSetupNotify:self setupResult:self.setupResult];
+                    [self tbmCameraDidSetupNotify:self setupResult:self.setupResult];
                 }
                 // Check video authorization status
                 if ( isCheckMicrophoneAuthorizationStatus) {
@@ -816,7 +804,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
         {
             // The user has previously denied access
             self.setupResult = isCheckMicrophoneAuthorizationStatus ? TBMCameraSetupResultMicrophoneNotAuthorized : TBMCameraSetupResultCameraNotAuthorized;
-            [self tbmCameraSetupNotify:self setupResult:self.setupResult];
+            [self tbmCameraDidSetupNotify:self setupResult:self.setupResult];
             break;
         }
     }
