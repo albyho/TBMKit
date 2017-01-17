@@ -9,6 +9,8 @@
 @import Foundation;
 @import AVFoundation;
 
+NS_ASSUME_NONNULL_BEGIN
+
 typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
     TBMCameraSetupResultSuccess,
     TBMCameraSetupResultUnknowError,
@@ -85,7 +87,7 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
  */
 - (void)tbmCameraWillConfigureCaptureOutput:(TBMCamera *)camera;
 /*!
- @method tbmCameraInitialVideoDevice:
+ @method tbmCameraConfigureCaptureOutput:
  @example
  AVCaptureMovieFileOutput *movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
  
@@ -191,13 +193,11 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
 
 @property (nonatomic, weak)         id<TBMCameraDelegate> delegate;
 
-@property (nonatomic, readonly)     TBMCameraPreviewView *previewView;
-
 @property (nonatomic, readonly)     AVCaptureSession *session;
 @property (nonatomic, readonly)     AVCaptureDevice *videoDevice;
 @property (nonatomic, readonly)     AVCaptureDevice *audioDevice;
 
-- (BOOL)setup;
+- (void)setup;
 /*!
  @method tbmCameraCaptureSessionPreset:
  @example
@@ -210,9 +210,22 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
  caller.videoDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:deviceTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
  NSArray *videoDevices = caller.videoDeviceDiscoverySession.devices;
  */
-- (void)changeCameraWithDevice:(AVCaptureDevice *)newVideoDevice;
+- (void)changeCameraWithDevice:(AVCaptureDevice *)videoDevice;
 - (void)changeFocusMode:(AVCaptureFocusMode)focusMode;
+- (void)changeLensPosition:(float)lensPosition;
+- (void)focusWithMode:(AVCaptureFocusMode)focusMode exposeWithMode:(AVCaptureExposureMode)exposureMode atDevicePoint:(CGPoint)point monitorSubjectAreaChange:(BOOL)monitorSubjectAreaChange;
+- (void)changeExposureMode:(AVCaptureExposureMode)exposureMode;
+- (void)changeExposureDuration:(float)exposureDuration;
+- (void)changeISO:(float)ISO;
+- (void)changeExposureTargetBias:(float)exposureTargetBias;
+- (void)changeWhiteBalanceMode:(AVCaptureWhiteBalanceMode)whiteBalanceMode;
+- (void)setWhiteBalanceGains:(AVCaptureWhiteBalanceGains)gains;
+- (void)changeTemperatureAndTint:(float)temperature tint:(float)tint;
+- (void)lockWithGrayWorld;
+
 - (void)start;
 - (void)stop;
 
 @end
+
+NS_ASSUME_NONNULL_END

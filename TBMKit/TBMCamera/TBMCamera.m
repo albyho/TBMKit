@@ -10,24 +10,21 @@
 @import Photos;
 
 #import "TBMCamera.h"
-#import "TBMCameraPreviewView.h"
 
-static void * SessionRunningContext = &SessionRunningContext;
-static void * FocusModeContext = &FocusModeContext;
-static void * ExposureModeContext = &ExposureModeContext;
-static void * WhiteBalanceModeContext = &WhiteBalanceModeContext;
-static void * LensPositionContext = &LensPositionContext;
-static void * ExposureDurationContext = &ExposureDurationContext;
-static void * ISOContext = &ISOContext;
-static void * ExposureTargetBiasContext = &ExposureTargetBiasContext;
-static void * ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
-static void * DeviceWhiteBalanceGainsContext = &DeviceWhiteBalanceGainsContext;
+static void *SessionRunningContext = &SessionRunningContext;
+static void *FocusModeContext = &FocusModeContext;
+static void *ExposureModeContext = &ExposureModeContext;
+static void *WhiteBalanceModeContext = &WhiteBalanceModeContext;
+static void *LensPositionContext = &LensPositionContext;
+static void *ExposureDurationContext = &ExposureDurationContext;
+static void *ISOContext = &ISOContext;
+static void *ExposureTargetBiasContext = &ExposureTargetBiasContext;
+static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
+static void *DeviceWhiteBalanceGainsContext = &DeviceWhiteBalanceGainsContext;
 
 static void *SessionQueueKey = &SessionQueueKey;
 
 @interface TBMCamera()
-
-@property (nonatomic, readwrite)    TBMCameraPreviewView *previewView;
 
 // Session management
 @property (nonatomic)               dispatch_queue_t sessionQueue;
@@ -52,10 +49,9 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     NSLog(@"%s", __FUNCTION__);
 }
 
-- (BOOL)setup {
+- (void)setup {
     if ( ![NSThread isMainThread] ) {
         NSLog(@"%s %@", __FUNCTION__, @"请在主线程调用");
-        return NO;
     }
     
     // Communicate with the session and other session objects on this queue
@@ -81,7 +77,6 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
         [self configureSession];
     });
 
-    return YES;
 }
 
 - (void)start {
@@ -105,7 +100,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     } );
 }
 
-#pragma mark Session Management
+#pragma mark - Session Management
 
 // Should be called on the session queue
 - (void)configureSession
@@ -176,7 +171,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     [self tbmCameraDidSetupNotify:self setupResult:self.setupResult];
 }
 
-#pragma mark TBMCameraDelegate
+#pragma mark - TBMCameraDelegate
 
 // Setup
 - (void)tbmCameraDidSetupNotify:(TBMCamera *)camera setupResult:(TBMCameraSetupResult)setupResult {
@@ -345,7 +340,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     }
 }
 
-#pragma mark KVO and Notifications
+#pragma mark - KVO and Notifications
 
 - (void)addObservers
 {
@@ -530,32 +525,32 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     [self tbmCameraSessionInterruptionEndedNotify:self notification:notification];
 }
 
-#pragma mark Device Configuration
+#pragma mark - Device Configuration
 
-- (void)changeCameraWithDevice:(AVCaptureDevice *)newVideoDevice
+- (void)changeCameraWithDevice:(AVCaptureDevice *)videoDevice
 {
     // Check if device changed
-    if ( newVideoDevice == self.videoDevice ) {
+    if ( videoDevice == self.videoDevice ) {
         return;
     }
     
     [self tbmCameraDeviceWillChangeNotify:self];
     
     runAsynchronouslyOnQueue(self.sessionQueue, SessionQueueKey, ^{
-        AVCaptureDeviceInput *newVideoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:newVideoDevice error:nil];
+        AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:nil];
         
         [self.session beginConfiguration];
         
         // Remove the existing device input first, since using the front and back camera simultaneously is not supported
         [self.session removeInput:self.videoDeviceInput];
-        if ( [self.session canAddInput:newVideoDeviceInput] ) {
+        if ( [self.session canAddInput:videoDeviceInput] ) {
             [[NSNotificationCenter defaultCenter] removeObserver:self name:AVCaptureDeviceSubjectAreaDidChangeNotification object:self.videoDevice];
             
-            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(subjectAreaDidChange:) name:AVCaptureDeviceSubjectAreaDidChangeNotification object:newVideoDevice];
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(subjectAreaDidChange:) name:AVCaptureDeviceSubjectAreaDidChangeNotification object:videoDevice];
             
-            [self.session addInput:newVideoDeviceInput];
-            self.videoDeviceInput = newVideoDeviceInput;
-            self.videoDevice = newVideoDevice;
+            [self.session addInput:videoDeviceInput];
+            self.videoDeviceInput = videoDeviceInput;
+            self.videoDevice = videoDevice;
         }
         else {
             [self.session addInput:self.videoDeviceInput];
@@ -650,11 +645,11 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     });
 }
 
-- (void)changeExposureDuration:(float)value
+- (void)changeExposureDuration:(float)exposureDuration
 {
     runAsynchronouslyOnQueue(self.sessionQueue, SessionQueueKey, ^{
         NSError *error = nil;
-        double p = pow( value, kExposureDurationPower ); // Apply power function to expand slider's low-end range
+        double p = pow( exposureDuration, kExposureDurationPower ); // Apply power function to expand slider's low-end range
         double minDurationSeconds = MAX( CMTimeGetSeconds( self.videoDevice.activeFormat.minExposureDuration ), kExposureMinimumDuration );
         double maxDurationSeconds = CMTimeGetSeconds( self.videoDevice.activeFormat.maxExposureDuration );
         double newDurationSeconds = p * ( maxDurationSeconds - minDurationSeconds ) + minDurationSeconds; // Scale from 0-1 slider range to actual duration
@@ -669,16 +664,16 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     });
 }
 
-- (void)changeISO:(float)value
+- (void)changeISO:(float)ISO
 {
     runAsynchronouslyOnQueue(self.sessionQueue, SessionQueueKey, ^{
         // 参数合法性校验
-        if(value < self.videoDevice.activeFormat.minISO || value > self.videoDevice.activeFormat.maxISO) {
+        if(ISO < self.videoDevice.activeFormat.minISO || ISO > self.videoDevice.activeFormat.maxISO) {
             return;
         }
         NSError *error = nil;
         if ( [self.videoDevice lockForConfiguration:&error] ) {
-            [self.videoDevice setExposureModeCustomWithDuration:AVCaptureExposureDurationCurrent ISO:value completionHandler:nil];
+            [self.videoDevice setExposureModeCustomWithDuration:AVCaptureExposureDurationCurrent ISO:ISO completionHandler:nil];
             [self.videoDevice unlockForConfiguration];
         }
         else {
@@ -687,16 +682,16 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     });
 }
 
-- (void)changeExposureTargetBias:(float)value
+- (void)changeExposureTargetBias:(float)exposureTargetBias
 {
     runAsynchronouslyOnQueue(self.sessionQueue, SessionQueueKey, ^{
         // 参数合法性校验
-        if(value < self.videoDevice.minExposureTargetBias || value > self.videoDevice.maxExposureTargetBias) {
+        if(exposureTargetBias < self.videoDevice.minExposureTargetBias || exposureTargetBias > self.videoDevice.maxExposureTargetBias) {
             return;
         }
         NSError *error = nil;
         if ( [self.videoDevice lockForConfiguration:&error] ) {
-            [self.videoDevice setExposureTargetBias:value completionHandler:nil];
+            [self.videoDevice setExposureTargetBias:exposureTargetBias completionHandler:nil];
             [self.videoDevice unlockForConfiguration];
         }
         else {
@@ -746,7 +741,6 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
         .temperature = temperature,
         .tint = tint,
     };
-    
     [self setWhiteBalanceGains:[self.videoDevice deviceWhiteBalanceGainsForTemperatureAndTintValues:temperatureAndTint]];
 }
 
@@ -770,7 +764,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     return g;
 }
 
-#pragma mark Utilities
+#pragma mark - Utilities
 
 - (void)checkAuthorizationStatus:(NSString *)mediaType {
     BOOL isCheckMicrophoneAuthorizationStatus = [mediaType isEqualToString:AVMediaTypeAudio];

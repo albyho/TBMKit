@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6908E4FB1E2DFD49009EA658 /* TBMFileRecorder.h in Headers */ = {isa = PBXBuildFile; fileRef = 6908E4F91E2DFD49009EA658 /* TBMFileRecorder.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		6908E4FC1E2DFD49009EA658 /* TBMFileRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = 6908E4FA1E2DFD49009EA658 /* TBMFileRecorder.m */; };
 		691123791E29C4FC00FCDC49 /* TBMKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 691123771E29C4FC00FCDC49 /* TBMKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		69C1266E1E2A563600B51AF5 /* TBMCamera.h in Headers */ = {isa = PBXBuildFile; fileRef = 69C1266C1E2A563600B51AF5 /* TBMCamera.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		69C1266F1E2A563600B51AF5 /* TBMCamera.m in Sources */ = {isa = PBXBuildFile; fileRef = 69C1266D1E2A563600B51AF5 /* TBMCamera.m */; };
@@ -15,6 +17,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6908E4F91E2DFD49009EA658 /* TBMFileRecorder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TBMFileRecorder.h; sourceTree = "<group>"; };
+		6908E4FA1E2DFD49009EA658 /* TBMFileRecorder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TBMFileRecorder.m; sourceTree = "<group>"; };
 		691123741E29C4FC00FCDC49 /* TBMKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TBMKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		691123771E29C4FC00FCDC49 /* TBMKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TBMKit.h; sourceTree = "<group>"; };
 		691123781E29C4FC00FCDC49 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -35,9 +39,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6908E4F81E2DFD3A009EA658 /* TBMFileRecorder */ = {
+			isa = PBXGroup;
+			children = (
+				6908E4F91E2DFD49009EA658 /* TBMFileRecorder.h */,
+				6908E4FA1E2DFD49009EA658 /* TBMFileRecorder.m */,
+			);
+			path = TBMFileRecorder;
+			sourceTree = "<group>";
+		};
 		6911236A1E29C4FC00FCDC49 = {
 			isa = PBXGroup;
 			children = (
+				6908E4F81E2DFD3A009EA658 /* TBMFileRecorder */,
 				69C1266B1E2A561100B51AF5 /* TBMCamera */,
 				691123761E29C4FC00FCDC49 /* TBMKit */,
 				691123751E29C4FC00FCDC49 /* Products */,
@@ -79,9 +93,10 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				69C126721E2A566B00B51AF5 /* TBMCameraPreviewView.h in Headers */,
 				691123791E29C4FC00FCDC49 /* TBMKit.h in Headers */,
 				69C1266E1E2A563600B51AF5 /* TBMCamera.h in Headers */,
+				69C126721E2A566B00B51AF5 /* TBMCameraPreviewView.h in Headers */,
+				6908E4FB1E2DFD49009EA658 /* TBMFileRecorder.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -153,6 +168,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6908E4FC1E2DFD49009EA658 /* TBMFileRecorder.m in Sources */,
 				69C126731E2A566B00B51AF5 /* TBMCameraPreviewView.m in Sources */,
 				69C1266F1E2A563600B51AF5 /* TBMCamera.m in Sources */,
 			);
