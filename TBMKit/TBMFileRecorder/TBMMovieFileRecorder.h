@@ -10,7 +10,7 @@
 
 @class TBMCamera, TBMCameraPreviewView;
 
-@interface TBMFileRecorder : NSObject
+@interface TBMMovieFileRecorder : NSObject
 
 @property (nonatomic, readonly)     TBMCamera *camera;
 @property (nonatomic, readonly)     TBMCameraPreviewView *previewView;

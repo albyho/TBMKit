@@ -74,9 +74,18 @@ typedef NS_ENUM( NSInteger, TBMCameraSetupResult ) {
  return [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
  
  >= iOS 10.0
+ NSArray<NSString *> *deviceTypes = @[AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeBuiltInDuoCamera, AVCaptureDeviceTypeBuiltInTelephotoCamera];
+ caller.videoDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:deviceTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+ NSArray *videoDevices = caller.videoDeviceDiscoverySession.devices;
+ for (AVCaptureDevice *videoDevice in devices) {
+    if ([videoDevice position] == AVCaptureDevicePositionBack) {
+        return videoDevice;
+    }
+ }
+ 或：
  AVCaptureDevice *videoDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera
- mediaType:AVMediaTypeVideo
- position:AVCaptureDevicePositionUnspecified];
+                                                                   mediaType:AVMediaTypeVideo
+                                                                    position:AVCaptureDevicePositionUnspecified];
  return videoDevice;
  */
 - (AVCaptureDevice *)tbmCameraInitialVideoDevice:(TBMCamera *)camera;       // 非主线程

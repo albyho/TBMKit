@@ -7,18 +7,18 @@
 //
 
 @import AVFoundation;
-#import "TBMFileRecorder.h"
+#import "TBMMovieFileRecorder.h"
 #import "TBMCamera.h"
 #import "TBMCameraPreviewView.h"
 
-@interface TBMFileRecorder ()<TBMCameraDelegate, AVCaptureFileOutputRecordingDelegate>
+@interface TBMMovieFileRecorder ()<TBMCameraDelegate, AVCaptureFileOutputRecordingDelegate>
 
 @property (nonatomic, readwrite)     TBMCamera *camera;
 @property (nonatomic, readwrite)     TBMCameraPreviewView *previewView;
 
 @end
 
-@implementation TBMFileRecorder
+@implementation TBMMovieFileRecorder
 
 #pragma mark - TBMCameraDelegate
 
