@@ -430,7 +430,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
             }
             
             [self tbmCameraExposureModeDidChangeNotify:self newValue:newMode oldValue:oldValue];
-            // 当为 AVCaptureExposureModeCustom 时，可设置 exposureDuration 和 ISO
+            // 当为 AVCaptureExposureModeCustom 时，可设置 exposureDuration 、 ISO 和 Bias；当为 AVCaptureExposureModeLocked 时，可设置 Bias 。
         }
     }
     else if ( context == ExposureDurationContext ) {
@@ -652,7 +652,6 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
 
 - (void)changeExposureDuration:(float)value
 {
-    // TODO: 参数合法性校验
     runAsynchronouslyOnQueue(self.sessionQueue, SessionQueueKey, ^{
         NSError *error = nil;
         double p = pow( value, kExposureDurationPower ); // Apply power function to expand slider's low-end range
@@ -672,8 +671,11 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
 
 - (void)changeISO:(float)value
 {
-    // TODO: 参数合法性校验
     runAsynchronouslyOnQueue(self.sessionQueue, SessionQueueKey, ^{
+        // 参数合法性校验
+        if(value < self.videoDevice.activeFormat.minISO || value > self.videoDevice.activeFormat.maxISO) {
+            return;
+        }
         NSError *error = nil;
         if ( [self.videoDevice lockForConfiguration:&error] ) {
             [self.videoDevice setExposureModeCustomWithDuration:AVCaptureExposureDurationCurrent ISO:value completionHandler:nil];
@@ -687,8 +689,11 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
 
 - (void)changeExposureTargetBias:(float)value
 {
-    // TODO: 参数合法性校验
     runAsynchronouslyOnQueue(self.sessionQueue, SessionQueueKey, ^{
+        // 参数合法性校验
+        if(value < self.videoDevice.minExposureTargetBias || value > self.videoDevice.maxExposureTargetBias) {
+            return;
+        }
         NSError *error = nil;
         if ( [self.videoDevice lockForConfiguration:&error] ) {
             [self.videoDevice setExposureTargetBias:value completionHandler:nil];
@@ -724,6 +729,7 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     runAsynchronouslyOnQueue(self.sessionQueue, SessionQueueKey, ^{
         NSError *error = nil;
         if ( [self.videoDevice lockForConfiguration:&error] ) {
+            // normalizedGains 方法会将值限制在合法范围内
             AVCaptureWhiteBalanceGains normalizedGains = [self normalizedGains:gains]; // Conversion can yield out-of-bound values, cap to limits
             [self.videoDevice setWhiteBalanceModeLockedWithDeviceWhiteBalanceGains:normalizedGains completionHandler:nil];
             [self.videoDevice unlockForConfiguration];
@@ -763,7 +769,6 @@ static const float kExposureMinimumDuration = 1.0/1000; // Limit exposure durati
     
     return g;
 }
-
 
 #pragma mark Utilities
 
